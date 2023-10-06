@@ -9,7 +9,6 @@ RUN yum install -y -q sudo unzip
 # https://omahaproxy.appspot.com/
 # Then follow the instructions here in below URL to download old builds of Chrome/Chromium that are stable
 # Current stable version of Chromium
-# branch_base_position=1002910
 ENV CHROMIUM_VERSION=1002910 
 # RUN yum install -y https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
 
