@@ -12,7 +12,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 secrets_manager_client = boto3.client('secretsmanager') 
 server_url = os.environ.get('SERVER_URL')
-user_secret_manager_arn = os.environ.get('USER_SECRET_MANAGER_ARN')
+user_secret_manager_name = os.environ.get('USER_SECRET_MANAGER_NAME')
 cookie_secret_manager_name = os.environ.get('COOKIE_SECRET_MANAGER_NAME')
 
 log = logging.getLogger()
@@ -29,9 +29,8 @@ def handler(event, context):
             "body": json.dumps("successful!")
         }
     
-    secret_values = get_secret_values(user_secret_manager_arn)
+    secret_values = get_secret_values(user_secret_manager_name)
     
-    # 使用 secret_values 中的键值对
     user_name = secret_values['username']
     password = secret_values['password']
     login_url = f"{server_url}/login"
@@ -41,8 +40,12 @@ def handler(event, context):
     log.info(f"password: {password}")
 
     cookie = get_cookies(login_url, user_name, password)
+    if cookie == None:
+        return {
+            "statusCode": 400,
+            "body": json.dumps("Get authentiction cookie failed!")
+        }        
     store_cookie(cookie)
-    
     call_authentication_api(api_url, cookie)
 
     return {
@@ -88,11 +91,7 @@ def get_cookies(alb_url, username, password):
         log.info("Login successfully")
     else:
         log.info("Login failed")
-        return {
-            'expireAt': 60 + int(time.time()),
-            'error': True,
-            'message': 'Authentication Error'
-        }
+        return None
 
     cookies_values=[]
     for c in cookies:
@@ -127,7 +126,7 @@ def store_cookie(cookie):
             SecretId=cookie_secret_manager_name,
             SecretString=json.dumps({
                 "Cookie": cookie,
-                "expireAt": createTime + 14400   # 4 hours
+                "expireAt": createTime + 1800   # 4 hours
               })
         )
 
@@ -149,12 +148,12 @@ def get_valid_cookie_from_secret_manager():
         return cookie
     
 def call_authentication_api(api_url, cookie):
+  log.info(f"api_url: {api_url}")
   data = f"this is a test"
-  headers = {
-      "Cookie": cookie
-  }
+  headers = {"cookie": cookie}
   response = requests.post(api_url, headers=headers, data=data)
   log.info(f"response code: {response.status_code}")
+  log.info(f"response url: {response.url}")
 
 
     

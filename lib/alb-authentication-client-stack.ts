@@ -1,7 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import {DockerImageFunction, DockerImageCode} from 'aws-cdk-lib/aws-lambda';
-import { RestApi, LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import {
   StackProps,
   CfnParameter,
@@ -23,11 +22,11 @@ export class AlbAuthenticationClientStack extends cdk.Stack {
       },
     );
     
-    const userInfoSecretManagerArnParam = new CfnParameter(
+    const userInfoSecretManagerNameParam = new CfnParameter(
       this, 
-      "UserInfoSecretManagerArn", 
+      "UserInfoSecretManagerName", 
       {
-        description: 'Secret Manager Arn for user name and password',
+        description: 'Secret Manager Name for user name and password',
         type: 'String',
       },
     );
@@ -36,19 +35,18 @@ export class AlbAuthenticationClientStack extends cdk.Stack {
       this, 
       "CookieSecretManagerName", 
       {
-        description: 'Secret Manager Arn for user name and password',
+        description: 'Secret Manager Name for user name and password',
         type: 'String',
       },
     );     
 
-    // 从Dockerfile创建一个Lambda函数
     const lambdaFunction = new DockerImageFunction(this, 'MyFunction', {
       code: DockerImageCode.fromImageAsset('./dockerfile'),
       timeout: cdk.Duration.seconds(60),
       memorySize: 1024,
       environment: {
         "SERVER_URL": serverUrlParam.valueAsString,
-        "USER_SECRET_MANAGER_ARN": userInfoSecretManagerArnParam.valueAsString,
+        "USER_SECRET_MANAGER_NAME": userInfoSecretManagerNameParam.valueAsString,
         "COOKIE_SECRET_MANAGER_NAME": cookieSecretManagerNameParam.valueAsString,
       }
     });
@@ -64,17 +62,10 @@ export class AlbAuthenticationClientStack extends cdk.Stack {
         resources: ['*'],
       })
     );
-
-    const api = new RestApi(this, 'TestAPI');
-
-    const lambdaIntegration = new LambdaIntegration(
-      lambdaFunction,
-      {
-        timeout: cdk.Duration.seconds(29),
-      }
-    );
-
-    const resource = api.root.addResource('myresource');
-    resource.addMethod('GET', lambdaIntegration);
+    new cdk.CfnOutput(this, 'LambdaFunctionNameOutput', {
+      value: lambdaFunction.functionName,
+      description: 'The name of the Lambda function',
+      exportName: 'LambdaFunctionName'
+    });    
   }
 }
