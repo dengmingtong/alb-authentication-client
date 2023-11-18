@@ -1,14 +1,26 @@
-# Welcome to your CDK TypeScript project
+# Overview
 
-This is a blank project for CDK development with TypeScript.
+This code implement a process using Lambda function and headless browsers to automatically login OIDC IdP, retrieve cookies and invoke API. You can use CDK to build AWS Resources and python code for Lambda function.
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+# User Guide
 
-## Useful commands
+After cloning the code, execute the following CDK command to deploy the environment:
+```
+cdk deploy --parameters ServerUrl="https://<Server URL>" --parameters UserInfoSecretManagerName="<User Secret Arn>" --parameters CookieSecretManagerName="<Cookie Secret Name>"
+```
 
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `cdk deploy`      deploy this stack to your default AWS account/region
-* `cdk diff`        compare deployed stack with current state
-* `cdk synth`       emits the synthesized CloudFormation template
+ - Server URL: API endpoint, for example: https://example.com
+ - User Secret Name: The name of secret
+ 	it need to be created manually in Amazon Secret Manager and store the OIDC IdP user’s credential, like below:
+ 	{
+	    "username":"<username>",
+	    "password":"<password>"
+	}
+ - Cookie Secret Name: Specify the Secret name to save the cookie. In the code example, we store the obtained cookie to the Secret Manager and need to specify a secret name. The lambda function will create secret by this name.
+
+ After the CDK deploy successfully, you will get the API client environment, the architecture as below: 
+
+ ![api-client-architecture](images/api-client-env-architecture.png)
+
+
+
